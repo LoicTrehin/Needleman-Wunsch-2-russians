@@ -3,6 +3,12 @@ import time
 import math
 
 def get_input_values():
+    """
+    Prompt the user to enter input values for the Needleman-Wunsch algorithm.
+
+    Returns:
+        tuple: A tuple containing the input values - S (str), T (str), Match (int), Mismatch (int), Gap (int).
+    """
     # Create two string variables S and T
     S = input("Enter the value for S: ")
     T = input("Enter the value for T: ")
@@ -19,6 +25,16 @@ def get_input_values():
     return S, T, Match, Mismatch, Gap
 
 def determine_best_t(n):
+    """
+    Determines the best value of t that is a divisor of n and closest to the square root of n.
+
+    Args:
+        n (int): The number for which the best value of t needs to be determined.
+
+    Returns:
+        int: The best value of t.
+
+    """
     # calculate the square root of n that as mignitude simalar to log(n)
     sqrt_n = math.sqrt(n)
 
@@ -38,6 +54,14 @@ def determine_best_t(n):
     return best_t
 
 def printMatrix(matrix, S, T):
+    """
+    Print the matrix in a tabular format.
+
+    Args:
+        matrix (list): The matrix to be printed.
+        S (str): The first sequence.
+        T (str): The second sequence.
+    """
     # add space to the string to print the matrix because of [0][0] = 0
     printS = " " + S
     printT = " " + T
@@ -47,6 +71,17 @@ def printMatrix(matrix, S, T):
     print(tabulate(matrix, headers=printT, showindex=printS, tablefmt="grid"))
 
 def create_and_initialize_matrix(S, T, Gap):
+    """
+    Create and initialize a matrix for the Needleman-Wunsch algorithm.
+
+    Args:
+        S (str): The first sequence.
+        T (str): The second sequence.
+        Gap (int): The gap penalty.
+
+    Returns:
+        tuple: A tuple containing two matrices - the score matrix and the direction matrix.
+    """
     # Create a 2D array of size (len(S)+1) * (len(T)+1) to store the score
     matrix = [[None] * (len(T) + 1) for _ in range(len(S) + 1)]
     # Create a 2D array of size (len(S)+1) * (len(T)+1) to store the direction
@@ -70,6 +105,21 @@ def create_and_initialize_matrix(S, T, Gap):
     return matrix, directionmatrix
 
 def fill_matrix(matrix, directionmatrix, S, T, Match, Mismatch, Gap):
+    """
+    Fill the score and direction matrices using the Needleman-Wunsch algorithm.
+
+    Args:
+        matrix (list): The score matrix.
+        directionmatrix (list): The direction matrix.
+        S (str): The first sequence.
+        T (str): The second sequence.
+        Match (int): The score for a match.
+        Mismatch (int): The score for a mismatch.
+        Gap (int): The gap penalty.
+
+    Returns:
+        tuple: A tuple containing the updated score matrix and direction matrix.
+    """
     for i in range(1, len(S) + 1):
         for j in range(1, len(T) + 1):
             # case of match or mismatch
@@ -80,12 +130,22 @@ def fill_matrix(matrix, directionmatrix, S, T, Match, Mismatch, Gap):
             # case of gap
             lscore = matrix[i][j-1] + Gap
             uscore = matrix[i-1][j] + Gap
-            # Fill the matrix with the maximum score and it's direction
+            # Fill the matrix with the maximum score and its direction
             matrix[i][j], directionmatrix[i][j] = max((dscore, 'D'), (lscore, 'L'), (uscore, 'U'))
     
     return matrix, directionmatrix
 
-def calculate_n_blocs_and_last_block_length(t, s):
+def calculate_n_blocs(t, s):
+    """
+    Calculate the number of blocks on a line or column.
+
+    Parameters:
+    t (int): The total number of elements in line or column in the matrix.
+    s (int): The number of elements in each block.
+
+    Returns:
+    int: The number of blocks.
+    """
     matrix_s = t+1
  
     for i in range (1, matrix_s):
@@ -95,6 +155,25 @@ def calculate_n_blocs_and_last_block_length(t, s):
     return i
 
 def fill_matrixlookuptable(matrix, directionmatrix, S, T, tS, tT, n_blockS, n_blockT, Match, Mismatch, Gap):
+    """
+    Fills the lookup table with block matrices and direction matrices.
+
+    Args:
+        matrix (list): The main matrix.
+        directionmatrix (list): The main direction matrix.
+        S (str): The sequence S.
+        T (str): The sequence T.
+        tS (int): The size of each block in S.
+        tT (int): The size of each block in T.
+        n_blockS (int): The number of blocks in S.
+        n_blockT (int): The number of blocks in T.
+        Match (int): The score for a match.
+        Mismatch (int): The score for a mismatch.
+        Gap (int): The score for a gap.
+
+    Returns:
+        tuple: A tuple containing the lookup table, the updated main matrix, and the updated main direction matrix.
+    """
     lookuptable = []
     for i in range(1, n_blockS + 1):
         for j in range(1, n_blockT + 1):
@@ -113,12 +192,6 @@ def fill_matrixlookuptable(matrix, directionmatrix, S, T, tS, tT, n_blockS, n_bl
             block = [tempmatrixblock, directionmatrixblock]
             lookuptable.append(block)
 
-            #print result
-            #print("\n Block Matrix:")
-            #printMatrix(tempmatrixblock, blockS, blockT)
-            #print("\n Direction block Matrix:")
-            #print(tabulate(directionmatrixblock, tablefmt="grid"))
-            
             # save the direction block matrix content in the main direction matrix
             for l, row in enumerate(directionmatrixblock):
                 for m, value in enumerate(row):
@@ -133,15 +206,21 @@ def fill_matrixlookuptable(matrix, directionmatrix, S, T, tS, tT, n_blockS, n_bl
             for k in range(len(tempmatrixblock)):
                 matrix[((i-1)*tS)-(i-1)+k][(j*tT)-j] = tempmatrixblock[k][-1]
             
-            #print result
-            #print("\n Main Matrix:")
-            #printMatrix(matrix, S, T)
-            #print("\n Direction Matrix:")
-            #printMatrix(directionmatrix, S, T)
     return lookuptable, matrix, directionmatrix
 
 
 def traceback(direction_matrix, S, T):
+    """
+    Perform traceback to obtain the optimal alignment.
+
+    Args:
+        direction_matrix (list): The direction matrix.
+        S (str): The first sequence.
+        T (str): The second sequence.
+
+    Returns:
+        tuple: A tuple containing the two aligned sequences.
+    """
     # Initialize the alignement variables
     alignement1 = ""
     alignement2 = ""
@@ -180,10 +259,10 @@ print("height of the block:", tS)
 print("width of the block:", tT)
 
 # calculate the number of blocks of size tS and the last block length
-n_blockS = calculate_n_blocs_and_last_block_length(len(S), tS)
+n_blockS = calculate_n_blocs(len(S), tS)
 
 # calculate the number of blocks of size tT and the last block length
-n_blockT = calculate_n_blocs_and_last_block_length(len(T), tT)
+n_blockT = calculate_n_blocs(len(T), tT)
 print ("number of blokcs in one column:", n_blockS)
 print ("number of blokcs in one line:", n_blockT)
 
